@@ -114,36 +114,76 @@ export default function ChildProfile({ child, records, onClick, onEditParentHeig
       </div>
       
       {prediction && (
-        <div className="mb-3 space-y-2">
-          <div className="flex items-center justify-between bg-primary/10 rounded-lg p-2 px-3 border border-primary/20">
-            <div className="text-xs font-medium text-primary flex items-center gap-1">
-              최종 예측 키 <span className="text-[10px] opacity-70">(만 20세)</span>
-            </div>
-            <div className="text-sm font-bold text-primary flex items-center gap-2">
-              <span className="text-xs opacity-60 font-normal">
-                {prediction.predictedHeightMin.toFixed(1)} ~ {prediction.predictedHeightMax.toFixed(1)}cm
-              </span>
-              <span>{prediction.predictedHeightFinal.toFixed(1)}cm</span>
-              {onEditParentHeight && (
-                <button 
-                  onClick={(e) => { e.stopPropagation(); onEditParentHeight(); }}
-                  className="text-[10px] bg-primary text-white px-2 py-0.5 rounded-full hover:bg-primary/80 transition-colors"
-                >
-                  {child.father_height ? '부모키 수정' : '부모키 입력'}
-                </button>
-              )}
-            </div>
+        <div className="mb-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-4 border border-primary/20 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-2 opacity-10">
+            <Ruler size={64} />
           </div>
-          {prediction.targetHeight && (
-            <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 rounded-lg p-2 px-3">
-              <div className="text-xs font-medium opacity-80">
-                유전적 목표 키 (부모 기준)
+          
+          <div className="text-xs font-semibold text-primary/80 mb-1 flex items-center gap-1.5">
+            ✨ 다중 하이브리드 예측 키 <span className="font-normal opacity-70">(만 20세)</span>
+          </div>
+          
+          <div className="flex items-end gap-2 mb-2">
+            <span className="text-4xl font-black text-primary tracking-tight">
+              {prediction.predictedHeightFinal.toFixed(1)}
+            </span>
+            <span className="text-lg font-bold text-primary/70 mb-1">cm</span>
+          </div>
+          
+          <div className="inline-flex items-center gap-1.5 bg-white/50 dark:bg-black/20 px-2.5 py-1 rounded-md text-xs font-medium text-primary/80 mb-3">
+            <span>모델 오차 범위:</span>
+            <span className="opacity-70">{prediction.predictedHeightMin.toFixed(1)} ~ {prediction.predictedHeightMax.toFixed(1)} cm</span>
+          </div>
+
+          <div className="space-y-2 text-xs">
+            {!prediction.isBasedOnBoneAge && (
+              <div className="flex items-start gap-1.5 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2.5 rounded-lg border border-amber-100 dark:border-amber-900/30">
+                <span className="mt-0.5">💡</span>
+                <div className="flex-1 leading-relaxed">
+                  <strong>골연령(뼈나이)</strong>을 측정 기록에 추가하면 예측이 더욱 정밀해집니다.
+                </div>
               </div>
-              <div className="text-sm font-bold opacity-90">
-                {prediction.targetHeight.toFixed(1)}cm
+            )}
+            
+            {!prediction.targetHeight && onEditParentHeight && (
+              <div 
+                className="flex items-center justify-between gap-2 text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 p-2.5 rounded-lg border border-indigo-100 dark:border-indigo-900/30 cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+                onClick={(e) => { e.stopPropagation(); onEditParentHeight(); }}
+              >
+                <div className="flex items-start gap-1.5">
+                  <span className="mt-0.5">👨‍👩‍👦</span>
+                  <div className="flex-1 leading-relaxed">
+                    <strong>부모키</strong>를 입력하여 유전적 목표 모델을 가동하세요.
+                  </div>
+                </div>
+                <span className="bg-indigo-100 dark:bg-indigo-800 px-2 py-1 rounded text-[10px] font-bold whitespace-nowrap">입력하기</span>
               </div>
-            </div>
-          )}
+            )}
+
+            {prediction.isBasedOnBoneAge && prediction.targetHeight && (
+              <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 p-2.5 rounded-lg border border-emerald-100 dark:border-emerald-900/30">
+                <span>✅</span>
+                <span className="font-medium">병원 수준의 4중 하이브리드 예측 가동 중</span>
+              </div>
+            )}
+            
+            {prediction.targetHeight && (
+              <div className="flex items-center justify-between text-[10px] opacity-60 px-1 pt-1 mt-1 border-t border-primary/10">
+                <span>적용된 유전적 목표 키</span>
+                <div className="flex items-center gap-2">
+                  <span>{prediction.targetHeight.toFixed(1)} cm</span>
+                  {onEditParentHeight && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); onEditParentHeight(); }}
+                      className="underline hover:text-primary transition-colors"
+                    >
+                      수정
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
       
