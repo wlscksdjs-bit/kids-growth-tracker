@@ -1,5 +1,6 @@
 import { Child, GrowthRecord } from "@/lib/types";
 import { format, parseISO } from "date-fns";
+import { calculatePrediction } from "@/lib/prediction";
 import { User, Ruler, Weight } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -7,13 +8,16 @@ interface ChildProfileProps {
   child: Child;
   records: GrowthRecord[];
   onClick: () => void;
+  onEditParentHeight?: () => void;
   isSelected: boolean;
 }
 
-export default function ChildProfile({ child, records, onClick, isSelected }: ChildProfileProps) {
+export default function ChildProfile({ child, records, onClick, onEditParentHeight, isSelected }: ChildProfileProps) {
   const sortedRecords = [...records].sort((a, b) => new Date(b.record_date).getTime() - new Date(a.record_date).getTime());
   const latestRecord = sortedRecords[0];
   const previousRecord = sortedRecords[1];
+  
+  const prediction = calculatePrediction(child, records);
 
   const heightDiff = latestRecord && previousRecord && latestRecord.height && previousRecord.height
     ? (latestRecord.height - previousRecord.height).toFixed(1)
@@ -41,6 +45,25 @@ export default function ChildProfile({ child, records, onClick, isSelected }: Ch
           <p className="text-xs opacity-70">{child.birth_year}년생</p>
         </div>
       </div>
+      
+      {prediction && (
+        <div className="mb-3 flex items-center justify-between bg-primary/10 rounded-lg p-2 px-3 border border-primary/20">
+          <div className="text-xs font-medium text-primary">
+            최종 예측 키
+          </div>
+          <div className="text-sm font-bold text-primary flex items-center gap-2">
+            {prediction.predictedHeightFinal.toFixed(1)}cm
+            {onEditParentHeight && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); onEditParentHeight(); }}
+                className="text-[10px] bg-primary text-white px-2 py-0.5 rounded-full hover:bg-primary/80 transition-colors"
+              >
+                {child.father_height ? '부모키 수정' : '부모키 입력'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       
       {latestRecord ? (
         <div className="space-y-2">

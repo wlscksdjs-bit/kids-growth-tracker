@@ -6,6 +6,7 @@ import { Child, GrowthRecord } from "@/lib/types";
 import ChildProfile from "@/components/ChildProfile";
 import GrowthChart from "@/components/GrowthChart";
 import RecordModal from "@/components/RecordModal";
+import ParentHeightModal from "@/components/ParentHeightModal";
 import { Plus, Activity, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -14,6 +15,7 @@ export default function Home() {
   const [records, setRecords] = useState<GrowthRecord[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isParentModalOpen, setIsParentModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +64,26 @@ export default function Home() {
     }
   };
 
+  const handleUpdateParentHeight = async (father: number | null, mother: number | null) => {
+    if (!selectedChildId) return;
+    try {
+      const { error } = await supabase
+        .from("children")
+        .update({ father_height: father, mother_height: mother })
+        .eq("id", selectedChildId);
+      
+      if (error) throw error;
+      
+      setChildren(children.map(c => 
+        c.id === selectedChildId ? { ...c, father_height: father, mother_height: mother } : c
+      ));
+      setIsParentModalOpen(false);
+    } catch (err) {
+      alert("부모 키 저장에 실패했습니다.");
+      console.error(err);
+    }
+  };
+
   const selectedChild = children.find((c) => c.id === selectedChildId);
   const selectedRecords = records.filter((r) => r.child_id === selectedChildId);
 
@@ -104,6 +126,7 @@ export default function Home() {
                 records={records.filter((r) => r.child_id === child.id)}
                 isSelected={selectedChildId === child.id}
                 onClick={() => setSelectedChildId(child.id)}
+                onEditParentHeight={selectedChildId === child.id ? () => setIsParentModalOpen(true) : undefined}
               />
             ))}
           </section>
@@ -119,15 +142,15 @@ export default function Home() {
                 <h3 className="font-bold mb-2 flex items-center justify-between">
                   키 성장 곡선 (cm)
                   <span className="text-xs font-normal opacity-60 bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded-full">
-                    6개월 예측 포함
+                    최종 예상 키 포함
                   </span>
                 </h3>
-                <GrowthChart records={selectedRecords} metric="height" />
+                <GrowthChart records={selectedRecords} child={selectedChild} metric="height" />
               </div>
 
               <div className="glass-panel p-5 rounded-2xl">
                 <h3 className="font-bold mb-2">몸무게 성장 곡선 (kg)</h3>
-                <GrowthChart records={selectedRecords} metric="weight" />
+                <GrowthChart records={selectedRecords} child={selectedChild} metric="weight" />
               </div>
 
               {/* 최근 측정 기록 목록 (간략히) */}
@@ -170,6 +193,15 @@ export default function Home() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSubmit={handleAddRecord}
+          child={selectedChild}
+        />
+      )}
+      
+      {selectedChild && (
+        <ParentHeightModal
+          isOpen={isParentModalOpen}
+          onClose={() => setIsParentModalOpen(false)}
+          onSubmit={handleUpdateParentHeight}
           child={selectedChild}
         />
       )}

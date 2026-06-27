@@ -3,6 +3,8 @@ export interface Child {
   name: string;
   birth_year: number;
   gender: string;
+  father_height?: number | null;
+  mother_height?: number | null;
 }
 
 export interface GrowthRecord {
