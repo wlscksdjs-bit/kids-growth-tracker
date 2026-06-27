@@ -15,7 +15,7 @@ import {
 import { format, parseISO, addMonths, differenceInDays } from "date-fns";
 import { Child, GrowthRecord } from "@/lib/types";
 import { calculatePrediction } from "@/lib/prediction";
-import { getStandardForAge } from "@/lib/growthStandards";
+import { getHeightByPercentile, getLmsForAge, calculateZScore, calculateHeightFromZ } from "@/lib/lms";
 
 interface GrowthChartProps {
   records: GrowthRecord[];
@@ -32,9 +32,11 @@ interface ChartDataPoint {
   targetHeight?: number | null;
   timestamp: number;
   ageYears?: number;
-  stdUpper?: number; // 97th
-  stdMiddle?: number; // 50th
-  stdLower?: number; // 3rd
+  p97?: number;
+  p90?: number;
+  p50?: number;
+  p10?: number;
+  p3?: number;
 }
 
 export default function GrowthChart({ records, child, metric }: GrowthChartProps) {
@@ -47,6 +49,7 @@ export default function GrowthChart({ records, child, metric }: GrowthChartProps
     if (sorted.length === 0) return [];
 
     const birthDate = new Date(child.birth_year, 0, 1);
+    const normalizedGender = (child.gender === "M" || child.gender === "male") ? "male" : "female";
     
     // Map actual data
     const chartData: ChartDataPoint[] = sorted.map((r) => {
@@ -102,8 +105,8 @@ export default function GrowthChart({ records, child, metric }: GrowthChartProps
         let currentAge = Math.ceil(lastAge);
         while (currentAge <= 20) {
           if (currentAge > lastAge + 0.1) {
-            const std = getStandardForAge(currentAge, child.gender as "male" | "female");
-            const predictedVal = std.mean + (prediction.currentZScore * std.sd);
+            const lmsNow = getLmsForAge(currentAge * 12, normalizedGender);
+            const predictedVal = calculateHeightFromZ(prediction.currentZScore, lmsNow);
             
             // 시간이 지날수록 불확실성(오차범위) 증가. 최종적으로 prediction.predictedHeightMax 오차에 도달
             const maxErrorMargin = prediction.predictedHeightMax - prediction.predictedHeightFinal;
@@ -125,13 +128,15 @@ export default function GrowthChart({ records, child, metric }: GrowthChartProps
           currentAge++;
         }
 
-        // 모든 차트 데이터(과거+미래)에 대해 배경 밴드 계산
+        // 모든 차트 데이터(과거+미래)에 대해 실제 백분위(LMS) 곡선 밴드 계산
         chartData.forEach(d => {
           if (d.ageYears !== undefined && d.ageYears <= 20) {
-            const std = getStandardForAge(d.ageYears, child.gender as "male" | "female");
-            d.stdUpper = Number((std.mean + 1.88 * std.sd).toFixed(1));
-            d.stdMiddle = Number(std.mean.toFixed(1));
-            d.stdLower = Number((std.mean - 1.88 * std.sd).toFixed(1));
+            const ageMonths = d.ageYears * 12;
+            d.p97 = Number(getHeightByPercentile(97, ageMonths, normalizedGender).toFixed(1));
+            d.p90 = Number(getHeightByPercentile(90, ageMonths, normalizedGender).toFixed(1));
+            d.p50 = Number(getHeightByPercentile(50, ageMonths, normalizedGender).toFixed(1));
+            d.p10 = Number(getHeightByPercentile(10, ageMonths, normalizedGender).toFixed(1));
+            d.p3 = Number(getHeightByPercentile(3, ageMonths, normalizedGender).toFixed(1));
           }
         });
       }
@@ -192,6 +197,11 @@ export default function GrowthChart({ records, child, metric }: GrowthChartProps
               if (name === "predictedMax") return [value, "예상 최대치"];
               if (name === "predictedMin") return [value, "예상 최소치"];
               if (name === "targetHeight") return [value, "유전적 예상 키"];
+              if (name === "p97") return [value, "상위 3% (97th)"];
+              if (name === "p90") return [value, "상위 10% (90th)"];
+              if (name === "p50") return [value, "평균 (50th)"];
+              if (name === "p10") return [value, "하위 10% (10th)"];
+              if (name === "p3") return [value, "하위 3% (3th)"];
               return [value, name];
             }}
           />
@@ -199,24 +209,12 @@ export default function GrowthChart({ records, child, metric }: GrowthChartProps
           
           {metric === "height" && (
             <>
-              <Area 
-                type="monotone" 
-                dataKey="stdUpper" 
-                name="상위 3%" 
-                stroke="none" 
-                fill="#f1f5f9" 
-                fillOpacity={0.1} 
-                isAnimationActive={false}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="stdLower" 
-                name="하위 3%" 
-                stroke="none" 
-                fill="#0f172a" 
-                fillOpacity={0.1} 
-                isAnimationActive={false}
-              />
+              {/* LMS 곡선 밴드 */}
+              <Line type="monotone" dataKey="p97" name="P97 (상위3%)" stroke="#cbd5e1" strokeWidth={1} dot={false} isAnimationActive={false} />
+              <Line type="monotone" dataKey="p90" name="P90" stroke="#e2e8f0" strokeWidth={1} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
+              <Line type="monotone" dataKey="p50" name="P50 (평균)" stroke="#94a3b8" strokeWidth={2} dot={false} isAnimationActive={false} />
+              <Line type="monotone" dataKey="p10" name="P10" stroke="#e2e8f0" strokeWidth={1} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
+              <Line type="monotone" dataKey="p3" name="P3 (하위3%)" stroke="#cbd5e1" strokeWidth={1} dot={false} isAnimationActive={false} />
               
               {/* 예측 확률 영역 (Min~Max) */}
               <Area 
@@ -234,17 +232,6 @@ export default function GrowthChart({ records, child, metric }: GrowthChartProps
                 fill="#fff" // 배경색으로 하위 영역을 덮어버림
                 fillOpacity={0.2} 
                 legendType="none"
-              />
-
-              <Line 
-                type="monotone" 
-                dataKey="stdMiddle" 
-                name="표준 평균" 
-                stroke="#cbd5e1" 
-                strokeWidth={1} 
-                strokeDasharray="3 3" 
-                dot={false}
-                isAnimationActive={false}
               />
             </>
           )}

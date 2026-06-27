@@ -1,5 +1,5 @@
 import { Child, GrowthRecord } from "./types";
-import { getStandardForAge } from "./growthStandards";
+import { getLmsForAge, calculateZScore, calculateHeightFromZ, zToPercentile } from "./lms";
 import { differenceInDays, parseISO } from "date-fns";
 
 export interface PredictionResult {
@@ -13,27 +13,6 @@ export interface PredictionResult {
   activeModelsCount: number;
 }
 
-// 표준 정규분포 누적 분포 함수 (Z-score to Percentile)
-function cdf(x: number) {
-  const mean = 0.0;
-  const dev = 1.0;
-  return 0.5 * (1 + erf((x - mean) / (dev * Math.sqrt(2))));
-}
-
-function erf(x: number) {
-  const sign = x >= 0 ? 1 : -1;
-  x = Math.abs(x);
-  const a1 = 0.254829592;
-  const a2 = -0.284496736;
-  const a3 = 1.421413741;
-  const a4 = -1.453152027;
-  const a5 = 1.061405429;
-  const p = 0.3275911;
-  const t = 1.0 / (1.0 + p * x);
-  const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
-  return sign * y;
-}
-
 export function calculatePrediction(child: Child, records: GrowthRecord[]): PredictionResult | null {
   const heightRecords = records.filter(r => r.height !== null).sort((a, b) => new Date(a.record_date).getTime() - new Date(b.record_date).getTime());
   
@@ -43,18 +22,19 @@ export function calculatePrediction(child: Child, records: GrowthRecord[]): Pred
   const birthDate = new Date(child.birth_year, 0, 1);
   const recordDate = parseISO(latestRecord.record_date);
   
-  const chronoAge = differenceInDays(recordDate, birthDate) / 365.25;
+  const chronoAgeYears = differenceInDays(recordDate, birthDate) / 365.25;
+  const chronoAgeMonths = chronoAgeYears * 12;
   const isBasedOnBoneAge = latestRecord.bone_age != null;
 
   const normalizedGender = (child.gender === "M" || child.gender === "male") ? "male" : "female";
 
-  const standardNowChrono = getStandardForAge(chronoAge, normalizedGender);
-  const standard20 = getStandardForAge(20, normalizedGender);
+  const lmsNowChrono = getLmsForAge(chronoAgeMonths, normalizedGender);
+  const lms20 = getLmsForAge(240, normalizedGender); // 20 years = 240 months
 
-  // [P1 모델] 통계 추세 (Pure Trend - 달력 나이 기준)
-  const zScoreChrono = (latestRecord.height! - standardNowChrono.mean) / standardNowChrono.sd;
-  const p1 = standard20.mean + (zScoreChrono * standard20.sd);
-  const currentPercentile = cdf(zScoreChrono) * 100;
+  // [P1 모델] 통계 추세 (Pure Trend - LMS 달력 나이 기준)
+  const zScoreChrono = calculateZScore(latestRecord.height!, lmsNowChrono);
+  const p1 = calculateHeightFromZ(zScoreChrono, lms20);
+  const currentPercentile = zToPercentile(zScoreChrono);
 
   // [P2 모델] 유전적 목표 키 (Genetic Target)
   let targetHeight: number | null = null;
@@ -69,17 +49,18 @@ export function calculatePrediction(child: Child, records: GrowthRecord[]): Pred
   }
 
   // [P3 모델] 시간 체감 가중치 추세 (Decay Weighted Trend)
-  // 20세가 될수록 가중치가 0에 수렴하도록 설계
-  const baseWeight = normalizedGender === "male" ? 15.0 : 7.5;
-  const decayFactor = Math.max(0, (20 - chronoAge) / 20);
+  // 20세가 될수록 가중치가 0에 수렴하도록 설계 (LMS 기반에서는 가중치를 약간 줄이는 것이 안전함)
+  const baseWeight = normalizedGender === "male" ? 10.0 : 5.0; 
+  const decayFactor = Math.max(0, (20 - chronoAgeYears) / 20);
   const p3 = p1 + (baseWeight * decayFactor);
 
   // [P4 모델] 골연령 기반 통계 추세 (Bone Age Trend)
   let p4: number | null = null;
   if (isBasedOnBoneAge) {
-    const standardNowBone = getStandardForAge(latestRecord.bone_age!, normalizedGender);
-    const zScoreBone = (latestRecord.height! - standardNowBone.mean) / standardNowBone.sd;
-    p4 = standard20.mean + (zScoreBone * standard20.sd);
+    const boneAgeMonths = latestRecord.bone_age! * 12;
+    const lmsNowBone = getLmsForAge(boneAgeMonths, normalizedGender);
+    const zScoreBone = calculateZScore(latestRecord.height!, lmsNowBone);
+    p4 = calculateHeightFromZ(zScoreBone, lms20);
   }
 
   // 하이브리드(Ensemble) 연산: 활성화된 모든 모델을 취합
