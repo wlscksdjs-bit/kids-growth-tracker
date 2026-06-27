@@ -17,45 +17,46 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchChildren = async () => {
-    try {
-      const { data, error } = await supabase.from("children").select("*").order("birth_year", { ascending: true });
-      if (error) throw error;
-      setChildren(data || []);
-      if (data && data.length > 0 && !selectedChildId) {
-        setSelectedChildId(data[0].id);
-      }
-    } catch (err: any) {
-      setError("데이터베이스 연결에 실패했습니다. Supabase 설정을 확인해주세요.");
-      console.error(err);
-    }
-  };
-
-  const fetchRecords = async () => {
-    try {
-      const { data, error } = await supabase.from("growth_records").select("*").order("record_date", { ascending: true });
-      if (error) throw error;
-      setRecords(data || []);
-    } catch (err: any) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchChildren();
-    fetchRecords();
+    let mounted = true;
+    
+    const loadData = async () => {
+      try {
+        const { data: childrenData, error: childErr } = await supabase.from("children").select("*").order("birth_year", { ascending: true });
+        if (childErr) throw childErr;
+        
+        const { data: recordsData, error: recErr } = await supabase.from("growth_records").select("*").order("record_date", { ascending: true });
+        if (recErr) throw recErr;
+
+        if (mounted) {
+          setChildren(childrenData || []);
+          if (childrenData && childrenData.length > 0) {
+            setSelectedChildId(childrenData[0].id);
+          }
+          setRecords(recordsData || []);
+        }
+      } catch (err) {
+        if (mounted) {
+          setError("데이터베이스 연결에 실패했습니다. Supabase 설정을 확인해주세요.");
+          console.error(err);
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadData();
+    return () => { mounted = false; };
   }, []);
 
-  const handleAddRecord = async (recordData: any) => {
+  const handleAddRecord = async (recordData: Partial<GrowthRecord>) => {
     try {
       const { data, error } = await supabase.from("growth_records").insert([recordData]).select();
       if (error) throw error;
       if (data) {
         setRecords([...records, data[0]]);
       }
-    } catch (err: any) {
+    } catch (err) {
       alert("기록 추가에 실패했습니다.");
       console.error(err);
     }

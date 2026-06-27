@@ -1,6 +1,6 @@
 import { Child, GrowthRecord } from "@/lib/types";
 import { format, parseISO } from "date-fns";
-import { User, Ruler, Weight, TrendingUp } from "lucide-react";
+import { User, Ruler, Weight } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface ChildProfileProps {

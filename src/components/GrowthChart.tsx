@@ -9,8 +9,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
-  ReferenceDot,
+  Legend
 } from "recharts";
 import { format, parseISO, addMonths } from "date-fns";
 import { GrowthRecord } from "@/lib/types";
@@ -47,8 +46,15 @@ export default function GrowthChart({ records, metric }: GrowthChartProps) {
     const slope = denominator === 0 ? 0 : numerator / denominator;
     const intercept = yMean - slope * xMean;
 
+    interface ChartDataPoint {
+      dateLabel: string;
+      actual?: number | null;
+      predicted?: number | null;
+      timestamp: number;
+    }
+
     // Map actual data
-    const chartData: any[] = sorted.map((r) => ({
+    const chartData: ChartDataPoint[] = sorted.map((r) => ({
       dateLabel: format(parseISO(r.record_date), "yy.MM"),
       actual: r[metric],
       timestamp: new Date(r.record_date).getTime()

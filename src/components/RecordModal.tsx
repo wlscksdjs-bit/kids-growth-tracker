@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Child } from "@/lib/types";
+import { Child, GrowthRecord } from "@/lib/types";
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface RecordModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: Partial<GrowthRecord>) => void;
   child: Child;
 }
 
