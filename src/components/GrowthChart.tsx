@@ -84,7 +84,8 @@ export default function GrowthChart({ records, metric }: GrowthChartProps) {
 
   const yDomain = useMemo(() => {
     if (data.length === 0) return [0, 200];
-    const values = data.map(d => d.actual || d.predicted).filter(Boolean);
+    const values = data.map(d => d.actual || d.predicted).filter(v => v != null) as number[];
+    if (values.length === 0) return [0, 200];
     const min = Math.min(...values);
     const max = Math.max(...values);
     return [Math.floor(min - 5), Math.ceil(max + 5)];
