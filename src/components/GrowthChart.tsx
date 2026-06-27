@@ -19,6 +19,13 @@ interface GrowthChartProps {
   metric: "height" | "weight";
 }
 
+interface ChartDataPoint {
+  dateLabel: string;
+  actual?: number | null;
+  predicted?: number | null;
+  timestamp: number;
+}
+
 export default function GrowthChart({ records, metric }: GrowthChartProps) {
   const data = useMemo(() => {
     // Sort records by date
@@ -27,11 +34,12 @@ export default function GrowthChart({ records, metric }: GrowthChartProps) {
       .sort((a, b) => new Date(a.record_date).getTime() - new Date(b.record_date).getTime());
     
     if (sorted.length < 2) {
-      return sorted.map((r) => ({
+      const shortData: ChartDataPoint[] = sorted.map((r) => ({
         dateLabel: format(parseISO(r.record_date), "yy.MM"),
         actual: r[metric] as number | null,
         timestamp: new Date(r.record_date).getTime()
       }));
+      return shortData;
     }
 
     // Calculate linear regression for prediction
@@ -51,13 +59,6 @@ export default function GrowthChart({ records, metric }: GrowthChartProps) {
     
     const slope = denominator === 0 ? 0 : numerator / denominator;
     const intercept = yMean - slope * xMean;
-
-    interface ChartDataPoint {
-      dateLabel: string;
-      actual?: number | null;
-      predicted?: number | null;
-      timestamp: number;
-    }
 
     // Map actual data
     const chartData: ChartDataPoint[] = sorted.map((r) => ({
