@@ -26,7 +26,13 @@ export default function GrowthChart({ records, metric }: GrowthChartProps) {
       .filter((r) => r[metric] !== null)
       .sort((a, b) => new Date(a.record_date).getTime() - new Date(b.record_date).getTime());
     
-    if (sorted.length < 2) return sorted.map(r => ({ ...r, dateLabel: format(parseISO(r.record_date), "yy.MM") }));
+    if (sorted.length < 2) {
+      return sorted.map((r) => ({
+        dateLabel: format(parseISO(r.record_date), "yy.MM"),
+        actual: r[metric] as number | null,
+        timestamp: new Date(r.record_date).getTime()
+      }));
+    }
 
     // Calculate linear regression for prediction
     const xValues = sorted.map((r) => new Date(r.record_date).getTime());
