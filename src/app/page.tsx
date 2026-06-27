@@ -7,6 +7,7 @@ import ChildProfile from "@/components/ChildProfile";
 import GrowthChart from "@/components/GrowthChart";
 import RecordModal from "@/components/RecordModal";
 import ParentHeightModal from "@/components/ParentHeightModal";
+import MiniChildCard from "@/components/MiniChildCard";
 import { Plus, Activity, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -32,9 +33,7 @@ export default function Home() {
 
         if (mounted) {
           setChildren(childrenData || []);
-          if (childrenData && childrenData.length > 0) {
-            setSelectedChildId(childrenData[0].id);
-          }
+          // Do not auto-select child anymore. Let it be null.
           setRecords(recordsData || []);
         }
       } catch (err) {
@@ -96,8 +95,8 @@ export default function Home() {
   }
 
   return (
-    <main className="max-w-md mx-auto p-4 sm:p-6 pb-24 relative min-h-screen">
-      <header className="mb-8 pt-4">
+    <main className="max-w-md mx-auto p-4 sm:p-6 pb-24 relative min-h-screen flex flex-col">
+      <header className={`transition-all duration-500 ${selectedChildId ? 'mb-4 pt-2' : 'mb-8 pt-8 text-center flex flex-col items-center'}`}>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Activity className="text-primary" />
           우리아이 성장노트
@@ -118,26 +117,62 @@ export default function Home() {
         </div>
       ) : (
         <>
-          <section className="grid grid-cols-2 gap-4 mb-8">
-            {children.map((child) => (
-              <ChildProfile
-                key={child.id}
-                child={child}
-                records={records.filter((r) => r.child_id === child.id)}
-                isSelected={selectedChildId === child.id}
-                onClick={() => setSelectedChildId(child.id)}
-                onEditParentHeight={selectedChildId === child.id ? () => setIsParentModalOpen(true) : undefined}
-              />
-            ))}
-          </section>
-
-          {selectedChild && (
+          {/* 아무도 선택되지 않았을 때: 2x2 갤러리 그리드 뷰 */}
+          {!selectedChildId && (
             <motion.section 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="grid grid-cols-2 gap-4 flex-1"
+            >
+              {children.map((child) => (
+                <div key={child.id}>
+                   <MiniChildCard
+                    child={child}
+                    layout="grid"
+                    onClick={() => setSelectedChildId(child.id)}
+                  />
+                </div>
+              ))}
+            </motion.section>
+          )}
+
+          {/* 아이가 선택되었을 때: 상단 미니 리스트 + 하단 상세 뷰 */}
+          {selectedChildId && selectedChild && (
+            <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              key={selectedChildId}
-              className="space-y-6"
+              className="flex flex-col flex-1"
             >
+              {/* 상단 미니 가로 리스트 */}
+              <div className="flex gap-3 overflow-x-auto pb-4 mb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 snap-x hide-scrollbar">
+                {children.map((child) => (
+                  <div key={child.id} className="snap-start shrink-0">
+                    <MiniChildCard
+                      child={child}
+                      layout="row"
+                      isSelected={selectedChildId === child.id}
+                      onClick={() => setSelectedChildId(child.id)}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* 선택된 아이 상세 뷰 */}
+              <motion.section 
+                key={selectedChildId}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
+              >
+                <ChildProfile
+                  child={selectedChild}
+                  records={selectedRecords}
+                  onEditParentHeight={() => setIsParentModalOpen(true)}
+                  isSelected={false} // No longer acts as a selectable card
+                  onClick={() => {}} // No-op
+                />
               <div className="glass-panel p-5 rounded-2xl">
                 <h3 className="font-bold mb-2 flex items-center justify-between">
                   키 성장 곡선 (cm)
@@ -173,7 +208,8 @@ export default function Home() {
                   {selectedRecords.length === 0 && <p className="text-sm opacity-50 text-center py-2">기록이 없습니다.</p>}
                 </div>
               </div>
-            </motion.section>
+              </motion.section>
+            </motion.div>
           )}
 
           {/* 하단 플로팅 버튼 */}

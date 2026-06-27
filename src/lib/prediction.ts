@@ -46,8 +46,10 @@ export function calculatePrediction(child: Child, records: GrowthRecord[]): Pred
   const chronoAge = differenceInDays(recordDate, birthDate) / 365.25;
   const isBasedOnBoneAge = latestRecord.bone_age != null;
 
-  const standardNowChrono = getStandardForAge(chronoAge, child.gender as "male" | "female");
-  const standard20 = getStandardForAge(20, child.gender as "male" | "female");
+  const normalizedGender = (child.gender === "M" || child.gender === "male") ? "male" : "female";
+
+  const standardNowChrono = getStandardForAge(chronoAge, normalizedGender);
+  const standard20 = getStandardForAge(20, normalizedGender);
 
   // [P1 모델] 통계 추세 (Pure Trend - 달력 나이 기준)
   const zScoreChrono = (latestRecord.height! - standardNowChrono.mean) / standardNowChrono.sd;
@@ -58,7 +60,7 @@ export function calculatePrediction(child: Child, records: GrowthRecord[]): Pred
   let targetHeight: number | null = null;
   let p2: number | null = null;
   if (child.father_height && child.mother_height) {
-    if (child.gender === "male") {
+    if (normalizedGender === "male") {
       targetHeight = (child.father_height + child.mother_height + 13) / 2;
     } else {
       targetHeight = (child.father_height + child.mother_height - 13) / 2;
@@ -68,14 +70,14 @@ export function calculatePrediction(child: Child, records: GrowthRecord[]): Pred
 
   // [P3 모델] 시간 체감 가중치 추세 (Decay Weighted Trend)
   // 20세가 될수록 가중치가 0에 수렴하도록 설계
-  const baseWeight = child.gender === "male" ? 15.0 : 7.5;
+  const baseWeight = normalizedGender === "male" ? 15.0 : 7.5;
   const decayFactor = Math.max(0, (20 - chronoAge) / 20);
   const p3 = p1 + (baseWeight * decayFactor);
 
   // [P4 모델] 골연령 기반 통계 추세 (Bone Age Trend)
   let p4: number | null = null;
   if (isBasedOnBoneAge) {
-    const standardNowBone = getStandardForAge(latestRecord.bone_age!, child.gender as "male" | "female");
+    const standardNowBone = getStandardForAge(latestRecord.bone_age!, normalizedGender);
     const zScoreBone = (latestRecord.height! - standardNowBone.mean) / standardNowBone.sd;
     p4 = standard20.mean + (zScoreBone * standard20.sd);
   }

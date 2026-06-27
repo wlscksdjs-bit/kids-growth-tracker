@@ -73,14 +73,7 @@ export default function ChildProfile({ child, records, onClick, onEditParentHeig
     : null;
 
   return (
-    <motion.div 
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={`glass-panel p-4 rounded-2xl cursor-pointer transition-all duration-300 ${
-        isSelected ? 'ring-2 ring-primary shadow-lg shadow-primary/20' : 'hover:shadow-md'
-      }`}
-    >
+    <div className="glass-panel p-6 rounded-3xl mb-6">
       <div className="flex items-center gap-3 mb-3 relative">
         <div 
           onClick={handlePhotoClick}
@@ -229,6 +222,6 @@ export default function ChildProfile({ child, records, onClick, onEditParentHeig
           기록이 없습니다
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }
