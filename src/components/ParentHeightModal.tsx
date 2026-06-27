@@ -16,9 +16,7 @@ export default function ParentHeightModal({ isOpen, onClose, onSubmit, child }: 
 
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFather(child.father_height ? child.father_height.toString() : "");
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMother(child.mother_height ? child.mother_height.toString() : "");
     }
   }, [isOpen, child]);

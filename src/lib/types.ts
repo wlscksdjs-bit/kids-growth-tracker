@@ -5,6 +5,7 @@ export interface Child {
   gender: string;
   father_height?: number | null;
   mother_height?: number | null;
+  photo_url?: string | null;
 }
 
 export interface GrowthRecord {
@@ -14,5 +15,6 @@ export interface GrowthRecord {
   height: number | null;
   weight: number | null;
   percentile: number | null;
+  bone_age?: number | null;
   created_at?: string;
 }

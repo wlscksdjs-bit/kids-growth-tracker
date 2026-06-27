@@ -17,6 +17,7 @@ export default function RecordModal({ isOpen, onClose, onSubmit, child }: Record
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const [percentile, setPercentile] = useState("");
+  const [boneAge, setBoneAge] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,12 +27,14 @@ export default function RecordModal({ isOpen, onClose, onSubmit, child }: Record
       height: height ? parseFloat(height) : null,
       weight: weight ? parseFloat(weight) : null,
       percentile: percentile ? parseFloat(percentile) : null,
+      bone_age: boneAge ? parseFloat(boneAge) : null,
     });
     
     // Reset form
     setHeight("");
     setWeight("");
     setPercentile("");
+    setBoneAge("");
     onClose();
   };
 
@@ -94,6 +97,22 @@ export default function RecordModal({ isOpen, onClose, onSubmit, child }: Record
                     className="w-full bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary transition-all"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1 opacity-80">골연령 / 뼈나이 (선택)</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={boneAge}
+                    onChange={(e) => setBoneAge(e.target.value)}
+                    placeholder="병원 측정치 (예: 8.5)"
+                    className="w-full bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary transition-all"
+                  />
+                  <span className="text-xs text-slate-500 whitespace-nowrap">세</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">골연령을 입력하면 최종 예측 키의 정확도가 크게 상승합니다.</p>
               </div>
 
               <div>

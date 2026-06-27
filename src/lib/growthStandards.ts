@@ -27,12 +27,14 @@ export const koreanGrowthStandards: StandardPoint[] = [
   { ageYears: 15, meanHeightBoys: 170.4, sdHeightBoys: 5.9, meanHeightGirls: 160.6, sdHeightGirls: 5.2 },
   { ageYears: 16, meanHeightBoys: 172.4, sdHeightBoys: 5.7, meanHeightGirls: 161.1, sdHeightGirls: 5.2 },
   { ageYears: 17, meanHeightBoys: 173.4, sdHeightBoys: 5.7, meanHeightGirls: 161.3, sdHeightGirls: 5.3 },
-  { ageYears: 18, meanHeightBoys: 173.8, sdHeightBoys: 5.8, meanHeightGirls: 161.4, sdHeightGirls: 5.3 }
+  { ageYears: 18, meanHeightBoys: 173.8, sdHeightBoys: 5.8, meanHeightGirls: 161.4, sdHeightGirls: 5.3 },
+  { ageYears: 19, meanHeightBoys: 174.0, sdHeightBoys: 5.8, meanHeightGirls: 161.5, sdHeightGirls: 5.3 },
+  { ageYears: 20, meanHeightBoys: 174.1, sdHeightBoys: 5.8, meanHeightGirls: 161.5, sdHeightGirls: 5.3 }
 ];
 
 // 특정 개월수(소수점 포함 연령)에 대한 평균 및 표준편차를 보간법으로 계산
 export function getStandardForAge(ageYears: number, gender: "male" | "female") {
-  const maxAge = 18;
+  const maxAge = 20;
   if (ageYears >= maxAge) {
     const std = koreanGrowthStandards[maxAge];
     return {

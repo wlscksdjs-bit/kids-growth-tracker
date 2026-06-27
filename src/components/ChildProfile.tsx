@@ -1,8 +1,10 @@
 import { Child, GrowthRecord } from "@/lib/types";
 import { format, parseISO } from "date-fns";
 import { calculatePrediction } from "@/lib/prediction";
-import { User, Ruler, Weight } from "lucide-react";
+import { User, Ruler, Weight, Camera } from "lucide-react";
 import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabase";
+import { useState, useRef } from "react";
 
 interface ChildProfileProps {
   child: Child;
@@ -16,6 +18,49 @@ export default function ChildProfile({ child, records, onClick, onEditParentHeig
   const sortedRecords = [...records].sort((a, b) => new Date(b.record_date).getTime() - new Date(a.record_date).getTime());
   const latestRecord = sortedRecords[0];
   const previousRecord = sortedRecords[1];
+  
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${child.id}-${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      
+      const { error: updateError } = await supabase
+        .from('children')
+        .update({ photo_url: data.publicUrl })
+        .eq('id', child.id);
+
+      if (updateError) throw updateError;
+      
+      // Reload page to reflect changes
+      window.location.reload();
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      alert('사진 업로드 중 오류가 발생했습니다.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
   
   const prediction = calculatePrediction(child, records);
 
@@ -36,10 +81,32 @@ export default function ChildProfile({ child, records, onClick, onEditParentHeig
         isSelected ? 'ring-2 ring-primary shadow-lg shadow-primary/20' : 'hover:shadow-md'
       }`}
     >
-      <div className="flex items-center gap-3 mb-3">
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white ${child.gender === 'M' ? 'bg-blue-500' : 'bg-pink-500'}`}>
-          <User size={20} />
+      <div className="flex items-center gap-3 mb-3 relative">
+        <div 
+          onClick={handlePhotoClick}
+          className={`relative w-12 h-12 rounded-full flex items-center justify-center text-white cursor-pointer overflow-hidden group ${child.gender === 'M' ? 'bg-blue-500' : 'bg-pink-500'}`}
+        >
+          {child.photo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={child.photo_url} alt={child.name} className="w-full h-full object-cover" />
+          ) : (
+            <User size={24} />
+          )}
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            {isUploading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Camera size={16} />
+            )}
+          </div>
         </div>
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          className="hidden" 
+          accept="image/*" 
+          onChange={handleFileChange} 
+        />
         <div>
           <h3 className="font-bold text-lg leading-tight">{child.name}</h3>
           <p className="text-xs opacity-70">{child.birth_year}년생</p>
@@ -47,21 +114,36 @@ export default function ChildProfile({ child, records, onClick, onEditParentHeig
       </div>
       
       {prediction && (
-        <div className="mb-3 flex items-center justify-between bg-primary/10 rounded-lg p-2 px-3 border border-primary/20">
-          <div className="text-xs font-medium text-primary">
-            최종 예측 키
+        <div className="mb-3 space-y-2">
+          <div className="flex items-center justify-between bg-primary/10 rounded-lg p-2 px-3 border border-primary/20">
+            <div className="text-xs font-medium text-primary flex items-center gap-1">
+              최종 예측 키 <span className="text-[10px] opacity-70">(만 20세)</span>
+            </div>
+            <div className="text-sm font-bold text-primary flex items-center gap-2">
+              <span className="text-xs opacity-60 font-normal">
+                {prediction.predictedHeightMin.toFixed(1)} ~ {prediction.predictedHeightMax.toFixed(1)}cm
+              </span>
+              <span>{prediction.predictedHeightFinal.toFixed(1)}cm</span>
+              {onEditParentHeight && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onEditParentHeight(); }}
+                  className="text-[10px] bg-primary text-white px-2 py-0.5 rounded-full hover:bg-primary/80 transition-colors"
+                >
+                  {child.father_height ? '부모키 수정' : '부모키 입력'}
+                </button>
+              )}
+            </div>
           </div>
-          <div className="text-sm font-bold text-primary flex items-center gap-2">
-            {prediction.predictedHeightFinal.toFixed(1)}cm
-            {onEditParentHeight && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); onEditParentHeight(); }}
-                className="text-[10px] bg-primary text-white px-2 py-0.5 rounded-full hover:bg-primary/80 transition-colors"
-              >
-                {child.father_height ? '부모키 수정' : '부모키 입력'}
-              </button>
-            )}
-          </div>
+          {prediction.targetHeight && (
+            <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 rounded-lg p-2 px-3">
+              <div className="text-xs font-medium opacity-80">
+                유전적 목표 키 (부모 기준)
+              </div>
+              <div className="text-sm font-bold opacity-90">
+                {prediction.targetHeight.toFixed(1)}cm
+              </div>
+            </div>
+          )}
         </div>
       )}
       
