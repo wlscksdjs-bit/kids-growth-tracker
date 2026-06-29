@@ -191,6 +191,14 @@ export default function Home() {
               {/* 최근 측정 기록 목록 (간략히) */}
               <div className="glass-panel p-5 rounded-2xl">
                 <h3 className="font-bold mb-4">최근 측정 기록</h3>
+                <div className="flex justify-between text-xs opacity-60 px-2 pb-2 mb-2 border-b border-slate-200 dark:border-slate-700">
+                  <span>측정일</span>
+                  <div className="flex gap-3 text-right">
+                    <span className="w-16">키</span>
+                    <span className="w-16">몸무게</span>
+                    <span className="w-16 text-primary">백분위점수</span>
+                  </div>
+                </div>
                 <div className="space-y-3">
                   {[...selectedRecords]
                     .sort((a, b) => new Date(b.record_date).getTime() - new Date(a.record_date).getTime())
@@ -198,10 +206,10 @@ export default function Home() {
                     .map((r, i) => (
                       <div key={r.id || i} className="flex justify-between items-center text-sm p-2 rounded-lg bg-white/30 dark:bg-slate-800/30">
                         <span className="opacity-80">{r.record_date}</span>
-                        <div className="flex gap-4 font-medium">
-                          <span className="w-16 text-right">{r.height ? `${r.height}cm` : '-'}</span>
-                          <span className="w-16 text-right">{r.weight ? `${r.weight}kg` : '-'}</span>
-                          {r.percentile && <span className="w-12 text-right text-xs text-primary">{r.percentile}점</span>}
+                        <div className="flex gap-3 font-medium text-right">
+                          <span className="w-16">{r.height ? `${r.height}cm` : '-'}</span>
+                          <span className="w-16">{r.weight ? `${r.weight}kg` : '-'}</span>
+                          <span className="w-16 text-primary font-bold">{r.percentile ? `${r.percentile}점` : '-'}</span>
                         </div>
                       </div>
                   ))}
