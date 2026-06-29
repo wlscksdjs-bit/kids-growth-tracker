@@ -21,12 +21,19 @@ export default function RecordModal({ isOpen, onClose, onSubmit, child }: Record
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 키와 몸무게가 모두 있으면 100분의 점수(키 - 몸무게) 자동 계산
+    let finalPercentile: number | null = percentile ? parseFloat(percentile) : null;
+    if (height && weight) {
+      finalPercentile = parseFloat((parseFloat(height) - parseFloat(weight)).toFixed(1));
+    }
+
     onSubmit({
       child_id: child.id,
       record_date: date,
       height: height ? parseFloat(height) : null,
       weight: weight ? parseFloat(weight) : null,
-      percentile: percentile ? parseFloat(percentile) : null,
+      percentile: finalPercentile,
       bone_age: boneAge ? parseFloat(boneAge) : null,
     });
     
@@ -116,15 +123,17 @@ export default function RecordModal({ isOpen, onClose, onSubmit, child }: Record
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1 opacity-80">백분위 / 점수 (선택)</label>
+                <label className="block text-sm font-medium mb-1 opacity-80">100분의 점수 (키 - 몸무게)</label>
                 <input
                   type="number"
                   step="0.01"
-                  value={percentile}
+                  value={height && weight ? (parseFloat(height) - parseFloat(weight)).toFixed(1) : percentile}
                   onChange={(e) => setPercentile(e.target.value)}
-                  placeholder="예: 95.67"
-                  className="w-full bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary transition-all"
+                  placeholder="자동 계산됩니다 (예: 100.5)"
+                  className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 outline-none text-slate-500"
+                  readOnly
                 />
+                <p className="text-xs text-slate-500 mt-1">키와 몸무게를 모두 입력하면 점수가 자동 기입됩니다.</p>
               </div>
 
               <button

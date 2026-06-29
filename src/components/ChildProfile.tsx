@@ -212,6 +212,18 @@ export default function ChildProfile({ child, records, onClick, onEditParentHeig
             </div>
           </div>
 
+          {latestRecord.height && latestRecord.weight && (
+            <div className="flex justify-between items-end pt-1">
+              <div className="flex items-center gap-1.5 opacity-80 text-sm">
+                🌟 100분의 점수 <span className="text-[10px] opacity-60">(키-몸무게)</span>
+              </div>
+              <div className="text-right">
+                <span className="font-bold text-lg text-primary">{(latestRecord.height - latestRecord.weight).toFixed(1)}</span>
+                <span className="text-xs opacity-70 ml-1">점</span>
+              </div>
+            </div>
+          )}
+
           <div className="pt-2 border-t border-white/10 flex justify-between items-center text-xs opacity-60">
             <span>최근 측정일</span>
             <span>{format(parseISO(latestRecord.record_date), 'yyyy.MM.dd')}</span>
