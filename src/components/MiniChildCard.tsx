@@ -18,15 +18,15 @@ export default function MiniChildCard({ child, isSelected, onClick, layout = "gr
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className={`glass-panel cursor-pointer transition-all duration-300 flex items-center gap-3 overflow-hidden
+      className={`glass-panel cursor-pointer transition-all duration-300 flex items-center overflow-hidden h-full
         ${isSelected ? "ring-2 ring-primary shadow-lg shadow-primary/20 opacity-100" : "opacity-80 hover:opacity-100 hover:shadow-md"}
-        ${isRow ? "p-2 rounded-full pr-4 min-w-[120px]" : "p-4 rounded-2xl flex-col text-center"}
+        ${isRow ? "p-1.5 sm:p-2 rounded-full pr-2 sm:pr-4 gap-2 w-full" : "p-6 sm:p-8 rounded-3xl flex-col justify-center text-center gap-4"}
       `}
     >
       <div 
         className={`relative shrink-0 rounded-full flex items-center justify-center text-white overflow-hidden shadow-inner
           ${child.gender === 'M' || child.gender === 'male' ? 'bg-blue-500' : 'bg-pink-500'}
-          ${isRow ? "w-8 h-8" : "w-16 h-16 mx-auto mb-2"}
+          ${isRow ? "w-8 h-8 sm:w-10 sm:h-10" : "w-24 h-24 sm:w-32 sm:h-32 mx-auto"}
         `}
       >
         {child.photo_url ? (
@@ -37,8 +37,8 @@ export default function MiniChildCard({ child, isSelected, onClick, layout = "gr
         )}
       </div>
       
-      <div className={isRow ? "flex-1 text-left" : "w-full"}>
-        <h3 className={`font-bold leading-tight truncate ${isRow ? "text-sm" : "text-lg"}`}>
+      <div className={isRow ? "flex-1 text-left min-w-0" : "w-full"}>
+        <h3 className={`font-bold leading-tight truncate ${isRow ? "text-xs sm:text-sm" : "text-xl sm:text-2xl mt-2"}`}>
           {child.name}
         </h3>
         {!isRow && (

@@ -97,7 +97,10 @@ export default function Home() {
   return (
     <main className="max-w-md mx-auto p-4 sm:p-6 pb-24 relative min-h-screen flex flex-col">
       <header className={`transition-all duration-500 ${selectedChildId ? 'mb-4 pt-2' : 'mb-8 pt-8 text-center flex flex-col items-center'}`}>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
+        <h1 
+          className="text-2xl font-bold flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => setSelectedChildId(null)}
+        >
           <Activity className="text-primary" />
           우리아이 성장노트
         </h1>
@@ -122,7 +125,7 @@ export default function Home() {
             <motion.section 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="grid grid-cols-2 gap-4 flex-1"
+              className="grid grid-cols-2 gap-4 sm:gap-6 flex-1 mb-8 content-start"
             >
               {children.map((child) => (
                 <div key={child.id}>
@@ -144,13 +147,13 @@ export default function Home() {
               className="flex flex-col flex-1"
             >
               {/* 상단 미니 가로 리스트 */}
-              <div className="flex gap-3 overflow-x-auto pb-4 mb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 snap-x hide-scrollbar">
-                {children.map((child) => (
-                  <div key={child.id} className="snap-start shrink-0">
+              <div className="grid grid-cols-3 gap-2 pb-4 mb-2">
+                {children.filter(c => c.id !== selectedChildId).map((child) => (
+                  <div key={child.id}>
                     <MiniChildCard
                       child={child}
                       layout="row"
-                      isSelected={selectedChildId === child.id}
+                      isSelected={false}
                       onClick={() => setSelectedChildId(child.id)}
                     />
                   </div>
