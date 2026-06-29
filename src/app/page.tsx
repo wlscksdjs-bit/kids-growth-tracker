@@ -209,7 +209,11 @@ export default function Home() {
                         <div className="flex gap-3 font-medium text-right">
                           <span className="w-16">{r.height ? `${r.height}cm` : '-'}</span>
                           <span className="w-16">{r.weight ? `${r.weight}kg` : '-'}</span>
-                          <span className="w-16 text-primary font-bold">{r.percentile ? `${r.percentile}점` : '-'}</span>
+                          <span className="w-16 text-primary font-bold">
+                            {r.percentile 
+                              ? `${r.percentile}점` 
+                              : (r.height && r.weight ? `${(r.height - r.weight).toFixed(1)}점` : '-')}
+                          </span>
                         </div>
                       </div>
                   ))}
